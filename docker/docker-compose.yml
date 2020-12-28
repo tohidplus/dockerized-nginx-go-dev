@@ -1,0 +1,48 @@
+version: "3.1"
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: ./docker/go/Dockerfile
+    volumes:
+      - ../../github.com:/go/src/github.com
+      - ../src:/go/src/app
+    restart: always
+    networks:
+      - api-gateway
+  web_server:
+    build:
+      context: ..
+      dockerfile: ./docker/nginx/Dockerfile
+    tty: true
+    restart: unless-stopped
+    ports:
+      - ${NGINX_PORT}:80
+    networks:
+      - api-gateway
+  db:
+    build:
+      context: ..
+      dockerfile: ./docker/mysql/Dockerfile
+    volumes:
+      - ./mysql/conf.d:/etc/mysql.conf.d
+      - ./mysql/data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - ${MYSQL_PORT}:3306
+    networks:
+      - api-gateway
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - ${ADMINER_PORT}:8080
+    networks:
+      - api-gateway
+networks:
+  api-gateway:
